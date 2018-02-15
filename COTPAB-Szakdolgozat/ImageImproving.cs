@@ -76,6 +76,7 @@ namespace COTPAB_Szakdolgozat
 
             TestProcess.Start();
 
+
             TestProcess.WaitForExit();
             lock (lockobj)
             {
