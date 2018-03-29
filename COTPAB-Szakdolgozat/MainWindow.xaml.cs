@@ -3,6 +3,8 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -76,7 +78,24 @@ namespace COTPAB_Szakdolgozat
             {
                 btnProcess.IsEnabled = false;
                 lProcessSteps.Visibility = Visibility.Visible;
-                vm.ImageImproving(mode, pathtxt);
+
+                //----------------------------------------------------------------------------------------------------------------------
+                bool gpu = false;
+                label.Content = "CPU :(";
+                ManagementObjectSearcher objvide = new ManagementObjectSearcher("select * from Win32_VideoController");
+
+                foreach (ManagementObject obj in objvide.Get())
+                {
+                    string a = (string)obj["Name"];
+                    if (a.Contains("NVIDIA"))
+                    {
+                        label.Content = "GPU";
+                        gpu = true;
+                    }
+                }
+                //----------------------------------------------------------------------------------------------------------------------
+
+                vm.ImageImproving(mode, pathtxt, gpu);
             }
         }
 

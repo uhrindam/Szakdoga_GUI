@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,17 +21,19 @@ namespace COTPAB_Szakdolgozat
         string pathNew;
         string pathtxt;
         int howManyTaskIsFinished;
+        bool gpu;
         SemaphoreSlim semaphore;
 
         MainWindowViewModell vm; //Ez Azért kell hogy a feldolgozás során meg tudjam jeleníteni a feldolgozás állapotát.
 
-        public ImageImproving(int mode, string pathOriginal, string pathNew, string pathtxt, MainWindowViewModell vm)
+        public ImageImproving(int mode, string pathOriginal, string pathNew, string pathtxt, MainWindowViewModell vm, bool gpu)
         {
             this.mode = mode;
             this.pathOriginal = pathOriginal;
             this.pathNew = pathNew;
             this.pathtxt = pathtxt;
             this.vm = vm;
+            this.gpu = gpu;
             howManyTaskIsFinished = -1;
             semaphore = new SemaphoreSlim(Environment.ProcessorCount);
 
@@ -54,25 +57,45 @@ namespace COTPAB_Szakdolgozat
             Improve();
         }
 
-        public void Improve()
+
+        [DllImport("C:\\Users\\Adam\\Desktop\\COTPAB-Szakdolgozat\\x64\\Debug\\CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
+        //[DllImport("CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SP(string readPath, string writePath);
+
+        //[DllImport("C:\\Users\\Adam\\Desktop\\COTPAB-Szakdolgozat\\x64\\Debug\\CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
+        //[DllImport("CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
+        //public static extern void SuperPixel(string readPath, string writePath);
+
+        async public void Improve()
         {
-            Task[] tasks = new Task[howManyImages];
-            for (int i = 0; i < tasks.Length; i++)
+            string a = filePaths[0];
+            string b = pathNew + "\\" + filenames[0];
+            if (gpu)
             {
-                int helper = i;
-                tasks[i] = Task.Run(() => Processing(helper));
+                await Task.Run(() => SP("C:\\Users\\Adam\\Desktop\\samples\\04.jpg", "C:\\Users\\Adam\\Desktop\\samples\\Improved\\kep.jpg"));
+                Console.WriteLine("GPU");
             }
-            
+            //else
+                //await Task.Run(() => SuperPixel(a, b));
+
+
+            //Task[] tasks = new Task[howManyImages];
+            //for (int i = 0; i < tasks.Length; i++)
+            //{
+            //    int helper = i;
+            //    tasks[i] = Task.Run(() => Processing(helper));
+            //}
+
         }
 
         object lockobj = new object();
-        private void Processing(int wich)
+        private void Processing(int which)
         {
             semaphore.Wait();
 
             Process TestProcess = new Process();
             TestProcess.StartInfo.FileName = "seged.exe";
-            TestProcess.StartInfo.Arguments = filePaths[wich] + " " + filenames[wich] + " " + pathNew;
+            TestProcess.StartInfo.Arguments = filePaths[which] + " " + filenames[which] + " " + pathNew;
 
             TestProcess.Start();
 

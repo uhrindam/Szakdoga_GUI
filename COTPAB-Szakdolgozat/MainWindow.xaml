@@ -34,5 +34,6 @@
         <Label x:Name="lSteps" Content="Lépések megjelenítése a következő képen: " HorizontalAlignment="Left" Margin="415,324,0,0" VerticalAlignment="Top" Visibility="Hidden"/>
         <TextBox x:Name="tbSteps" HorizontalAlignment="Left" Height="26" Margin="658,324,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" VerticalContentAlignment="Center" MaxLength="3" PreviewTextInput="Pages_PreviewTextInput" Visibility="Hidden"/>
         <Label x:Name="lProcessSteps" Content="{Binding ProcessSteps}" HorizontalAlignment="Left" HorizontalContentAlignment="Center" Margin="11,400,0,0" VerticalAlignment="Top" Height="34" Width="863" Visibility="Hidden"/>
+        <Label x:Name="label" Content="Label" HorizontalAlignment="Left" Margin="24,321,0,0" VerticalAlignment="Top" Background="#FF9BC6D2" Width="64"/>
     </Grid>
 </Window>
