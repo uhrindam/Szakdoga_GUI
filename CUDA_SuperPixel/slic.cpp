@@ -409,6 +409,9 @@ extern "C"
 	{
 		/* Load the image and convert to Lab colour space. */
 		//Mat image = imread("C:\\Users\\Adam\\Desktop\\samples\\completed.jpg", 1);
+		//string readPath = "C:\\Users\\Adam\\Desktop\\samples\\completed.jpg";
+		//string writePath = "C:\\Users\\Adam\\Desktop\\xmen.jpg";
+
 		Mat image = imread(readPath, 1);
 		Mat lab_image = image.clone();
 		cvtColor(image, lab_image, CV_BGR2Lab);

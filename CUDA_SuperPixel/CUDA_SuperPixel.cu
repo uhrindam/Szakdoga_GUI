@@ -208,7 +208,7 @@ void colour_with_cluster_means(Mat image) {
 		t_colours[i].push_back(0);
 		t_colours[i].push_back(0);
 	}
-	cout << "push" << endl;
+
 	/* Gather the colour values per cluster. */
 	for (int i = 0; i < image.cols; i++) {
 		for (int j = 0; j < image.rows; j++) {
@@ -220,7 +220,7 @@ void colour_with_cluster_means(Mat image) {
 			t_colours[index][2] += colour.val[2];
 		}
 	}
-	cout << "osszeadas" << endl;
+
 	/* Divide by the number of pixels per cluster to get the mean colour. */
 	for (int i = 0; i < (int)t_colours.size(); i++) {
 		if (center_counts[i] != 0)
@@ -230,7 +230,7 @@ void colour_with_cluster_means(Mat image) {
 			t_colours[i][2] /= center_counts[i];
 		}
 	}
-	cout << "osztas" << endl;
+
 	/* Fill in. */
 	for (int i = 0; i < image.cols; i++) {
 		for (int j = 0; j < image.rows; j++) {
@@ -244,7 +244,6 @@ void colour_with_cluster_means(Mat image) {
 			image.at<Vec3b>(j, i) = ncolour;
 		}
 	}
-	cout << "visszairas" << endl;
 }
 
 void display_contours(Mat image, Vec3b colour) {
@@ -425,9 +424,7 @@ extern "C"
 
 		//string readPath = "C:\\Users\\Adam\\Desktop\\samples\\completed.jpg";
 		//string writePath = "C:\\Users\\Adam\\Desktop\\xmen.jpg";
-		string rp = readPath;
-		string wp = writePath;
-		Mat image = imread(rp, 1);
+		Mat image = imread(readPath, 1);
 		cols = image.cols;
 		rows = image.rows;
 
@@ -460,6 +457,6 @@ extern "C"
 
 		Mat cwtm = image.clone();
 		colour_with_cluster_means(cwtm);
-		imwrite(wp, cwtm);
+		imwrite(writePath, cwtm);
 	}
 }

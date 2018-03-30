@@ -58,25 +58,20 @@ namespace COTPAB_Szakdolgozat
         }
 
 
-        [DllImport("C:\\Users\\Adam\\Desktop\\COTPAB-Szakdolgozat\\x64\\Debug\\CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
-        //[DllImport("CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
+        //[DllImport("C:\\Users\\Adam\\Desktop\\COTPAB-Szakdolgozat\\x64\\Debug\\CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void SP(string readPath, string writePath);
 
         //[DllImport("C:\\Users\\Adam\\Desktop\\COTPAB-Szakdolgozat\\x64\\Debug\\CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
-        //[DllImport("CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
-        //public static extern void SuperPixel(string readPath, string writePath);
+        [DllImport("CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SuperPixel(string readPath, string writePath);
 
-        async public void Improve()
+        public void Improve()
         {
-            string a = filePaths[0];
-            string b = pathNew + "\\" + filenames[0];
             if (gpu)
-            {
-                await Task.Run(() => SP("C:\\Users\\Adam\\Desktop\\samples\\04.jpg", "C:\\Users\\Adam\\Desktop\\samples\\Improved\\kep.jpg"));
-                Console.WriteLine("GPU");
-            }
-            //else
-                //await Task.Run(() => SuperPixel(a, b));
+                SP(filePaths[0], pathNew + "\\" + filenames[0]);
+            else
+                SuperPixel(filePaths[0], pathNew + "\\" + filenames[0]);
 
 
             //Task[] tasks = new Task[howManyImages];
