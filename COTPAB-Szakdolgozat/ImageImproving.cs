@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace COTPAB_Szakdolgozat
 {
@@ -36,7 +37,7 @@ namespace COTPAB_Szakdolgozat
             this.gpu = gpu;
             howManyTaskIsFinished = -1;
             semaphore = new SemaphoreSlim(Environment.ProcessorCount);
-            CopyOfTheDLLFile();
+            CopyOfTheEXE();
             Directory.CreateDirectory(pathNew); //ha már létezik a mappa akkor nem történik semmi.
 
             ProcessingThePaths();
@@ -54,10 +55,9 @@ namespace COTPAB_Szakdolgozat
 
             howManyImages = filePaths.Length;
             ProcessStepsInc();
-            Improve();
         }
 
-        private void CopyOfTheDLLFile()
+        private void CopyOfTheEXE()
         {
             var exePath = System.Reflection.Assembly.GetEntryAssembly().Location.Split('\\');
             string dllPath = string.Empty;
@@ -69,42 +69,41 @@ namespace COTPAB_Szakdolgozat
                     dllPath += exePath[i] + '\\';
                 onlyPath += exePath[i] + '\\';
             }
-            dllPath += "x64\\Debug\\CUDA_SuperPixel.dll";
+            dllPath += "x64\\Debug\\CUDA__SUPERPIXEL.exe";
 
-            if (Directory.GetFiles(onlyPath, "CUDA_SuperPixel.dll").Length == 0)
-                File.Copy(dllPath, onlyPath + "CUDA_SuperPixel.dll");
+            if (Directory.GetFiles(onlyPath, "CUDA__SUPERPIXEL.exe").Length == 0)
+                File.Copy(dllPath, onlyPath + "CUDA__SUPERPIXEL.exe");
         }
 
-        [DllImport("CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void SP(string readPath, string writePath);
-
-        [DllImport("CUDA_SuperPixel.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void SuperPixel(string readPath, string writePath);
-
-        private void ProcessWithCUDA()
+        private void ImageQualityImprove(bool isGPU)
         {
-            for (int i = 0; i < filePaths.Length; i++)
+            //for (int i = 0; i < filePaths.Length; i++)
+            //{
+            //int index = i;
+
+            Task.Run(() =>
             {
-                SP(filePaths[i], pathNew + "\\" + filenames[i]);
+                Process TestProcess = new Process();
+                TestProcess.StartInfo.FileName = "CUDA__SUPERPIXEL.exe";
+                TestProcess.StartInfo.UseShellExecute = false;
+                TestProcess.StartInfo.CreateNoWindow = true;
+                TestProcess.StartInfo.Arguments = filePaths[0] + " " + pathNew + "\\" + filenames[0];
 
-            }
-        }
+                TestProcess.Start();
+                TestProcess.WaitForExit();
+                MessageBox.Show("vege");
+            });
+            //SP(filePaths[0], pathNew + "\\" + filenames[0]);
+            //}
 
-        private void ProcessWithCPU()
-        {
-            for (int i = 0; i < filePaths.Length; i++)
-            {
-                SuperPixel(filePaths[i], pathNew + "\\" + filenames[i]);
-
-            }
         }
 
         public void Improve()
         {
             if (gpu)
-                ProcessWithCUDA();
-            else
-                ProcessWithCPU();
+                ImageQualityImprove(true);
+            //else
+            //    ImageQualityImprove(false);
 
 
             //Task[] tasks = new Task[howManyImages];
