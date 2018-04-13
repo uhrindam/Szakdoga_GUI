@@ -33,7 +33,7 @@ namespace COTPAB_Szakdolgozat
         {
             InitializeComponent();
             vm = new MainWindowViewModell();
-            mode = 1;
+            mode = 0;
             this.DataContext = vm;
         }
 

@@ -77,46 +77,49 @@ namespace COTPAB_Szakdolgozat
 
         private void ImageQualityImprove(bool isGPU)
         {
-            //for (int i = 0; i < filePaths.Length; i++)
-            //{
-            //int index = i;
-
-            Task.Run(() =>
+            Task[] tasks = new Task[howManyImages];
+            for (int i = 0; i < tasks.Length; i++)
             {
-                Process TestProcess = new Process();
-                TestProcess.StartInfo.FileName = "CUDA__SUPERPIXEL.exe";
-                TestProcess.StartInfo.UseShellExecute = false;
-                TestProcess.StartInfo.CreateNoWindow = true;
-                TestProcess.StartInfo.Arguments = filePaths[0] + " " + pathNew + "\\" + filenames[0];
+                int index = i;
 
-                TestProcess.Start();
-                TestProcess.WaitForExit();
-                MessageBox.Show("vege");
-            });
-            //SP(filePaths[0], pathNew + "\\" + filenames[0]);
-            //}
-
+                tasks[index] = Task.Run(() => ImageQualityImproveProcessing(index));
+            }
         }
 
-        public void Improve()
+        object improceLockObj = new object();
+        private void ImageQualityImproveProcessing(int which)
         {
-            if (gpu)
-                ImageQualityImprove(true);
-            //else
-            //    ImageQualityImprove(false);
+            semaphore.Wait();
+            Console.WriteLine(which);
 
+            Process TestProcess = new Process();
+            TestProcess.StartInfo.FileName = "CUDA__SUPERPIXEL.exe";
+            TestProcess.StartInfo.UseShellExecute = false;
+            TestProcess.StartInfo.CreateNoWindow = true;
+            TestProcess.StartInfo.Arguments = filePaths[0] + " " + pathNew + "\\" + filenames[0];
 
-            //Task[] tasks = new Task[howManyImages];
-            //for (int i = 0; i < tasks.Length; i++)
-            //{
-            //    int helper = i;
-            //    tasks[i] = Task.Run(() => Processing(helper));
-            //}
+            TestProcess.Start();
+            TestProcess.WaitForExit();
+            lock (improceLockObj)
+            {
+                ProcessStepsInc();
+            }
 
+            semaphore.Release();
         }
 
-        object lockobj = new object();
-        private void Processing(int which)
+        private void DeleteBubleContent()
+        {
+            Task[] tasks = new Task[howManyImages];
+            for (int i = 0; i < tasks.Length; i++)
+            {
+                int index = i;
+                tasks[index] = Task.Run(() => DeleteBubleContentProcessing(index));
+            }
+        }
+
+        object deleteBubleContentLockObj = new object();
+        private void DeleteBubleContentProcessing(int which)
         {
             semaphore.Wait();
 
@@ -128,12 +131,49 @@ namespace COTPAB_Szakdolgozat
 
 
             TestProcess.WaitForExit();
-            lock (lockobj)
+            lock (deleteBubleContentLockObj)
             {
                 ProcessStepsInc();
             }
 
             semaphore.Release();
+        }
+
+        public void Improve()
+        {
+            //üres szövegbuborékok, feljavtott kép
+            if (mode == 0)
+            {
+                if (gpu)
+                    ImageQualityImprove(true);
+                else
+                    ImageQualityImprove(false);
+            }
+            //eredeti szöveg, feljavtott kép
+            else if (mode == 1)
+            {
+
+            }
+            //lefordtott, fejavtott kép
+            else if (mode == 2)
+            {
+
+            }
+            //eredeti szöveg, nincs feljavítás
+            else if (mode == 3)
+            {
+
+            }
+            //lefordtott, nincs feljavítás
+            else if (mode == 4)
+            {
+
+            }
+            //üres, nincs feljavitás
+            else
+            {
+                DeleteBubleContent();
+            }
         }
 
         private void ProcessStepsInc()
