@@ -36,7 +36,6 @@ namespace COTPAB_Szakdolgozat
             this.vm = vm;
             this.gpu = gpu;
             howManyTaskIsFinished = -1;
-            semaphore = new SemaphoreSlim(Environment.ProcessorCount);
             CopyOfTheEXE();
             Directory.CreateDirectory(pathNew); //ha már létezik a mappa akkor nem történik semmi.
 
@@ -77,17 +76,27 @@ namespace COTPAB_Szakdolgozat
 
         private void ImageQualityImprove(bool isGPU)
         {
-            Task[] tasks = new Task[howManyImages];
-            for (int i = 0; i < tasks.Length; i++)
+            string isGPUProcess = String.Empty;
+            if (gpu)
+            {
+                semaphore = new SemaphoreSlim(1);
+                isGPUProcess = "gpu";
+            }
+            else
+            {
+                semaphore = new SemaphoreSlim(Environment.ProcessorCount);
+                isGPUProcess = "cpu";
+            }
+
+            for (int i = 0; i < howManyImages; i++)
             {
                 int index = i;
-
-                tasks[index] = Task.Run(() => ImageQualityImproveProcessing(index));
+                Task.Run(() => ImageQualityImproveProcessing(index, isGPUProcess));
             }
         }
 
-        object improceLockObj = new object();
-        private void ImageQualityImproveProcessing(int which)
+        object improcessLockObj = new object();
+        private void ImageQualityImproveProcessing(int which, string isGPUProcess)
         {
             semaphore.Wait();
             Console.WriteLine(which);
@@ -96,11 +105,12 @@ namespace COTPAB_Szakdolgozat
             TestProcess.StartInfo.FileName = "CUDA__SUPERPIXEL.exe";
             TestProcess.StartInfo.UseShellExecute = false;
             TestProcess.StartInfo.CreateNoWindow = true;
-            TestProcess.StartInfo.Arguments = filePaths[0] + " " + pathNew + "\\" + filenames[0];
+            TestProcess.StartInfo.Arguments = filePaths[which] + " " + pathNew + "\\"
+                + filenames[which] + " " + isGPUProcess;
 
             TestProcess.Start();
             TestProcess.WaitForExit();
-            lock (improceLockObj)
+            lock (improcessLockObj)
             {
                 ProcessStepsInc();
             }
@@ -110,11 +120,10 @@ namespace COTPAB_Szakdolgozat
 
         private void DeleteBubleContent()
         {
-            Task[] tasks = new Task[howManyImages];
-            for (int i = 0; i < tasks.Length; i++)
+            for (int i = 0; i < howManyImages; i++)
             {
                 int index = i;
-                tasks[index] = Task.Run(() => DeleteBubleContentProcessing(index));
+                Task.Run(() => DeleteBubleContentProcessing(index));
             }
         }
 
@@ -128,8 +137,6 @@ namespace COTPAB_Szakdolgozat
             TestProcess.StartInfo.Arguments = filePaths[which] + " " + filenames[which] + " " + pathNew;
 
             TestProcess.Start();
-
-
             TestProcess.WaitForExit();
             lock (deleteBubleContentLockObj)
             {
@@ -144,10 +151,7 @@ namespace COTPAB_Szakdolgozat
             //üres szövegbuborékok, feljavtott kép
             if (mode == 0)
             {
-                if (gpu)
-                    ImageQualityImprove(true);
-                else
-                    ImageQualityImprove(false);
+                ImageQualityImprove(gpu);
             }
             //eredeti szöveg, feljavtott kép
             else if (mode == 1)
@@ -180,8 +184,8 @@ namespace COTPAB_Szakdolgozat
         {
             howManyTaskIsFinished++;
             vm.ProcessSteps = "A képek feldolgozása folyamatban. A feldolgozás állapota: " + howManyImages + " / " + howManyTaskIsFinished + ".";
-            //if (howManyTaskIsFinished == howManyImages)
-            //    MessageBox.Show("A feldolgozás befejeződött!");
+            if (howManyTaskIsFinished == howManyImages)
+                MessageBox.Show("A feldolgozás befejeződött!");
         }
     }
 }
