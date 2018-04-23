@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:COTPAB_Szakdolgozat"
         mc:Ignorable="d"
-        Title="COTPAB - Scannelt képregény feljavítása" Height="490.444" Width="890" ResizeMode="NoResize">
+        Title="COTPAB - Scannelt képregény feljavítása" Height="440.444" Width="890" ResizeMode="NoResize">
     <Grid>
         <Label Content="Képregény mappájának kiválasztása:" HorizontalAlignment="Left" Margin="10,26,0,0" VerticalAlignment="Top"/>
         <Label Content="Az átdolgozott képregény helyének kiválasztása:" HorizontalAlignment="Left" Margin="10,57,0,0" VerticalAlignment="Top"/>
@@ -15,25 +15,15 @@
         <Label Content="{Binding PathNew}" HorizontalAlignment="Left" Margin="415,57,0,0" VerticalAlignment="Top" Width="458"/>
         <Separator Height="29" Margin="10,83,9.333,0" VerticalAlignment="Top"/>
         <Label Content="Feldolgozás módjának kiválasztása:" HorizontalAlignment="Left" Margin="10,109,0,0" VerticalAlignment="Top"/>
-        <Separator Height="29" Margin="10,297,10.333,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnProcess" Content="Feldolgozás elindítása" Margin="10,361,10.333,0" VerticalAlignment="Top" Height="34" Click="btnProcess_Click" IsEnabled="False"/>
-        <RadioButton x:Name="mode1" Content="A kép minőségének feljavítása, a szövegbuborékok üresenhagyásával." HorizontalAlignment="Left" Margin="51,138,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26" IsChecked="True" Checked="mode1_Checked" />
-        <RadioButton x:Name="mode2" Content="A kép minőségének feljavítása, a szövegbuborékok feltöltése az eredeti angol szöveggel." HorizontalAlignment="Left" Margin="51,165,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26" Checked="mode2_Checked"/>
-        <RadioButton x:Name="mode3" Content="A kép minőségének feljavítása, a szövegbuborékok feltöltése a lefordított magyar szöveggel." HorizontalAlignment="Left" Margin="51,193,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26" Checked="mode3_Checked"/>
-        <RadioButton x:Name="mode4" Content="A kép változatlanul hagyása, az eredeti angol szöveg kinyerése." HorizontalAlignment="Left" Margin="51,221,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26" Checked="mode4_Checked"/>
-        <RadioButton x:Name="mode5" Content="A kép változatlanul hagyása, a szövegbuborékok feltöltése a lefordított magyar szöveggel." HorizontalAlignment="Left" Margin="51,248,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26" Checked="mode5_Checked"/>
-        <Label x:Name="Labelmode2" Content="Szövegesfájl kiváalsztása:" HorizontalAlignment="Left" Margin="574,163,0,0" VerticalAlignment="Top" Visibility="Hidden"/>
-        <Label x:Name="Labelmode3" Content="Szövegesfájl kiváalsztása:" HorizontalAlignment="Left" Margin="574,191,0,0" VerticalAlignment="Top" Visibility="Hidden"/>
-        <Label x:Name="Labelmode4" Content="Szövegesfájl helyének kiváalsztása:" HorizontalAlignment="Left" Margin="574,220,0,0" VerticalAlignment="Top" Visibility="Hidden"/>
-        <Label x:Name="Labelmode5" Content="Szövegesfájl kiváalsztása:" HorizontalAlignment="Left" Margin="574,249,0,0" VerticalAlignment="Top" Visibility="Hidden"/>
-        <Button x:Name="btnmode3" Content="Fájl tallózása..." Margin="716,192,11.667,0" VerticalAlignment="Top" Height="26" Visibility="Hidden" Click="btnmode3_Click"/>
-        <Button x:Name="btnmode4" Content="Mappa tallózása..." Margin="767,221,11.667,0" VerticalAlignment="Top" Height="26" Visibility="Hidden" Click="btnmode4_Click"/>
-        <Button x:Name="btnmode5" Content="Fájl tallózása..." Margin="717,249,11.667,0" VerticalAlignment="Top" Height="26" Visibility="Hidden" Click="btnmode5_Click"/>
-        <CheckBox x:Name="cbSteps" Content="Feldolgozási lépések megjelenítése" HorizontalAlignment="Left" Margin="161,331,0,0" VerticalAlignment="Top" Checked="cbSteps_Checked" Unchecked="cbSteps_Unchecked" />
-        <Button x:Name="btnSteps" Content="Feldolgozási lépések megjelenítése" Margin="11,400,9.333,0" VerticalAlignment="Top" Height="34" Click="btnSteps_Click" Visibility="Hidden"/>
-        <Label x:Name="lSteps" Content="Lépések megjelenítése a következő képen: " HorizontalAlignment="Left" Margin="415,324,0,0" VerticalAlignment="Top" Visibility="Hidden"/>
-        <TextBox x:Name="tbSteps" HorizontalAlignment="Left" Height="26" Margin="658,324,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" VerticalContentAlignment="Center" MaxLength="3" PreviewTextInput="Pages_PreviewTextInput" Visibility="Hidden"/>
-        <Label x:Name="lProcessSteps" Content="{Binding ProcessSteps}" HorizontalAlignment="Left" HorizontalContentAlignment="Center" Margin="11,400,0,0" VerticalAlignment="Top" Height="34" Width="863" Visibility="Hidden"/>
-        <Label x:Name="label" Content="Label" HorizontalAlignment="Left" Margin="24,321,0,0" VerticalAlignment="Top" Background="#FF9BC6D2" Width="64"/>
+        <Separator Height="29" Margin="11,252,9.667,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnProcess" Content="Feldolgozás elindítása" Margin="11,324,9.667,0" VerticalAlignment="Top" Height="34" Click="btnProcess_Click" IsEnabled="False"/>
+        <RadioButton x:Name="mode1" Content="A kép minőségének változatlanul hagyása, a szövegbuborékok üresen hagyásával." HorizontalAlignment="Left" Margin="51,138,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26" IsChecked="True" />
+        <RadioButton x:Name="mode2" Content="A kép minőségének változatlanul hagyása, a szövegbuborékok feltöltése az eredeti szöveggel." HorizontalAlignment="Left" Margin="51,165,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26" />
+        <RadioButton x:Name="mode3" Content="A kép minőségének feljavítása, a szövegbuborékok üresen hagyásával." HorizontalAlignment="Left" Margin="51,193,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26"/>
+        <RadioButton x:Name="mode4" Content="A kép minőségének feljavítása, a szövegbuborékok feltöltése az eredeti szöveggel." HorizontalAlignment="Left" Margin="51,221,0,0" VerticalContentAlignment="Center" VerticalAlignment="Top" Height="26" />
+        <CheckBox x:Name="cbSteps" Content="Feldolgozási lépések megjelenítése" HorizontalAlignment="Left" Margin="117,286,0,0" VerticalAlignment="Top" Checked="cbSteps_Checked" Unchecked="cbSteps_Unchecked" />
+        <Label x:Name="lSteps" Content="Lépések megjelenítése a következő képen: " HorizontalAlignment="Left" Margin="415,281,0,0" VerticalAlignment="Top" Visibility="Hidden"/>
+        <TextBox x:Name="tbSteps" HorizontalAlignment="Left" Height="26" Margin="657,281,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" VerticalContentAlignment="Center" MaxLength="3" PreviewTextInput="Pages_PreviewTextInput"  Visibility="Hidden"/>
+        <Label x:Name="lProcessSteps" Content="{Binding ProcessSteps}" HorizontalAlignment="Left" HorizontalContentAlignment="Center" Margin="12,363,0,0" VerticalAlignment="Top" Height="34" Width="863" Visibility="Hidden"/>
     </Grid>
 </Window>

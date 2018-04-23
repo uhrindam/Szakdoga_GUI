@@ -70,10 +70,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="ImprovingStepsWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -84,10 +80,6 @@
     </Compile>
     <Compile Include="Bindable.cs" />
     <Compile Include="ImageImproving.cs" />
-    <Compile Include="ImprovingStepsWindow.xaml.cs">
-      <DependentUpon>ImprovingStepsWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="ImprovingStepsWindowViewModel.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

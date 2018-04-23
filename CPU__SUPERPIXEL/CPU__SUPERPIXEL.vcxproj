@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{647657A0-401E-429E-9BE5-8F381DF333CE}</ProjectGuid>
-    <RootNamespace>CUDA__SUPERPIXEL</RootNamespace>
+    <ProjectGuid>{02CED2DA-377B-48D1-A144-4BF5A22B0D27}</ProjectGuid>
+    <RootNamespace>CPU__SUPERPIXEL</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -52,7 +52,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 8.0.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -86,14 +85,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\+Libarys\opencv 3.3 cuda 8.0 vs 15\include</AdditionalIncludeDirectories>
     </ClCompile>
-    <CudaCompile>
-      <Include>C:\+Libarys\opencv 3.3 cuda 8.0 vs 15\include</Include>
-    </CudaCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\+Libarys\opencv 3.3 cuda 8.0 vs 15\x64\vc14\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_world330d.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>NotSet</SubSystem>
+      <AdditionalLibraryDirectories>C:\+Libarys\opencv 3.3 cuda 8.0 vs 15\x64\vc14\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_world330d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -123,18 +119,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="slicCUDA.cu">
-      <FileType>Document</FileType>
-    </CudaCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="slic.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="slicCUDA.h" />
+    <ClInclude Include="slic.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 8.0.targets" />
   </ImportGroup>
 </Project>

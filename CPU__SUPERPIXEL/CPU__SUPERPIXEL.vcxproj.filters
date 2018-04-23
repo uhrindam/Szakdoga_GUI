@@ -18,15 +18,13 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="slicCUDA.cu">
+    <ClCompile Include="slic.cpp">
       <Filter>Source Files</Filter>
-    </CudaCompile>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="slicCUDA.h">
+    <ClInclude Include="slic.h">
       <Filter>Header Files</Filter>
-    </None>
+    </ClInclude>
   </ItemGroup>
 </Project>

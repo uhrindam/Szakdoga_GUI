@@ -1,30 +1,4 @@
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include <opencv2\opencv.hpp>
-#include "slic.h"
-
-using namespace std;
-using namespace cv;
-
-#define nc 80 //maximum vizsgált távolság a centroidok keresésekor
-#define numberofSuperpixels 4500
-#define iteration 10
-#define maxColorDistance 39//15
-#define numberOfNeighbors 8
-#define maxThreadinoneBlock 700
-
-int cols;
-int rows;
-int step;
-int centersLength;
-int centersRowPieces;
-int centersColPieces;
-int *clusters;
-float *distances;
-float *centers;
-int *center_counts;
-uchar3 *colors;
-int *neighbors;
+#include "slicCUDA.h"
 
 __device__ int *d_clusters;								//cols * rows
 __device__ float *d_distances;							//cols * rows
@@ -32,6 +6,10 @@ __device__ float *d_centers;							//centersLength * 5
 __device__ int *d_center_counts;						//centersLength
 __device__ uchar3 *d_colors;							//cols * rows
 __device__ int *d_neighbors;							//centerlength * 8
+
+slicCUDA::slicCUDA(){}
+
+slicCUDA::~slicCUDA(){}
 
 __device__ float compute_dist(int ci, int y, int x, uchar3 colour, float *d_centers, int pitch, int d_step)
 {
@@ -110,14 +88,14 @@ __global__ void compute2(int d_centersLength, float *d_centers, int *d_center_co
 	}
 }
 
-float colorDistance(uchar3 actuallPixel, uchar3 neighborPixel)
+float slicCUDA::colorDistance(uchar3 actuallPixel, uchar3 neighborPixel)
 {
 	float dc = sqrt(pow(actuallPixel.x - neighborPixel.x, 2) + pow(actuallPixel.y - neighborPixel.y, 2)
 		+ pow(actuallPixel.z - neighborPixel.z, 2));
 	return dc;
 }
 
-void neighborMerge()
+void slicCUDA::neighborMerge()
 {
 	const int dx8[numberOfNeighbors] = { -1, -1,  0,  1, 1, 1, 0, -1 };
 	const int dy8[numberOfNeighbors] = { 0, -1, -1, -1, 0, 1, 1,  1 };
@@ -190,8 +168,12 @@ void neighborMerge()
 	}
 }
 
-void initData(Mat image)
+void slicCUDA::initData(Mat image)
 {
+	cols = image.cols;
+	rows = image.rows;
+	step = (sqrt((cols * rows) / (double)numberofSuperpixels));
+
 	clusters = new int[cols*rows];
 	distances = new float[cols*rows];
 	for (int i = 0; i < cols*rows; i++)
@@ -255,7 +237,9 @@ void initData(Mat image)
 	}
 }
 
-void dataCopy()
+
+
+void slicCUDA::dataCopy()
 {
 	cudaMalloc((void**)&d_clusters, sizeof(int)*rows*cols);
 	cudaMemcpy(d_clusters, clusters, sizeof(int)*rows*cols, cudaMemcpyHostToDevice);
@@ -269,7 +253,7 @@ void dataCopy()
 	cudaMemcpy(d_colors, colors, sizeof(uchar3)*rows*cols, cudaMemcpyHostToDevice);
 }
 
-void dataFree()
+void slicCUDA::dataFree()
 {
 	cudaFree(d_clusters);
 	cudaFree(d_distances);
@@ -278,7 +262,7 @@ void dataFree()
 	cudaFree(d_colors);
 }
 
-void colour_with_cluster_means(Mat image) {
+void slicCUDA::colour_with_cluster_means(Mat image) {
 	cout << "FILL" << endl;
 
 	for (int i = 0; i < image.cols; i++) {
@@ -295,67 +279,25 @@ void colour_with_cluster_means(Mat image) {
 	}
 }
 
-int main(int ArgsC, char* Args[])
+void slicCUDA::startKernels()
 {
-	string readPath;
-	string writePath;
-	string isGPUProcess = "gpu";
+	int howManyBlocks = centersLength / maxThreadinoneBlock;
+	int threadsPerBlock = (centersLength / howManyBlocks) + 1;
 
-	if (ArgsC < 2)
+	int howManyBlocks2 = rows*cols / maxThreadinoneBlock;
+	int threadsPerBlock2 = (rows*cols / howManyBlocks2) + 1;
+	for (int i = 0; i < iteration; i++)
 	{
-		readPath = "C:\\Users\\Adam\\Desktop\\samples\\completed.jpg";
-		writePath = "C:\\Users\\Adam\\Desktop\\xmen.jpg";
-		if (Args[3] == "cpu")
-			isGPUProcess = "cpu";
-	}
-	else
-	{
-		readPath = Args[1];
-		writePath = Args[2];
-	}
+		dataCopy();
+		compute << <howManyBlocks, threadsPerBlock >> > (cols, rows, step, centersLength, d_clusters, d_distances, d_centers, d_center_counts, d_colors, 5);
+		compute1 << <howManyBlocks2, threadsPerBlock2 >> > (cols, rows, d_clusters, d_distances, d_centers, d_center_counts, d_colors, 5);
+		compute2 << <howManyBlocks, threadsPerBlock >> > (centersLength, d_centers, d_center_counts, 5);
 
-	Mat image = imread(readPath, 1);
-	cols = image.cols;
-	rows = image.rows;
-	step = (sqrt((cols * rows) / (double)numberofSuperpixels));
+		cudaMemcpy(distances, d_distances, sizeof(float)*rows*cols, cudaMemcpyDeviceToHost);
+		cudaMemcpy(clusters, d_clusters, sizeof(int)*rows*cols, cudaMemcpyDeviceToHost);
+		cudaMemcpy(centers, d_centers, sizeof(int)*centersLength * 5, cudaMemcpyDeviceToHost);
+		cudaMemcpy(center_counts, d_center_counts, sizeof(int)*centersLength, cudaMemcpyDeviceToHost);
 
-	if (isGPUProcess == "gpu")
-	{
-		initData(image);
-
-		int howManyBlocks = centersLength / maxThreadinoneBlock;
-		int threadsPerBlock = (centersLength / howManyBlocks) + 1;
-
-		int howManyBlocks2 = rows*cols / maxThreadinoneBlock;
-		int threadsPerBlock2 = (rows*cols / howManyBlocks2) + 1;
-		for (int i = 0; i < iteration; i++)
-		{
-			dataCopy();
-			compute << <howManyBlocks, threadsPerBlock >> > (cols, rows, step, centersLength, d_clusters, d_distances, d_centers, d_center_counts, d_colors, 5);
-			compute1 << <howManyBlocks2, threadsPerBlock2 >> > (cols, rows, d_clusters, d_distances, d_centers, d_center_counts, d_colors, 5);
-			compute2 << <howManyBlocks, threadsPerBlock >> > (centersLength, d_centers, d_center_counts, 5);
-
-			cudaMemcpy(distances, d_distances, sizeof(float)*rows*cols, cudaMemcpyDeviceToHost);
-			cudaMemcpy(clusters, d_clusters, sizeof(int)*rows*cols, cudaMemcpyDeviceToHost);
-			cudaMemcpy(centers, d_centers, sizeof(int)*centersLength * 5, cudaMemcpyDeviceToHost);
-			cudaMemcpy(center_counts, d_center_counts, sizeof(int)*centersLength, cudaMemcpyDeviceToHost);
-
-			dataFree();
-		}
-
-		neighborMerge();
-
-		Mat cwtm = image.clone();
-		colour_with_cluster_means(cwtm);
-		imwrite(writePath, cwtm);
-	}
-	else
-	{
-		Slic slic;
-		slic.generate_superpixels(image, step, nc);
-
-		slic.neighborMerge();
-		slic.colour_with_cluster_means(image);
-		imwrite(writePath, image);
+		dataFree();
 	}
 }

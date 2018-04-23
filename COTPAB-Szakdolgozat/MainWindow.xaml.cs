@@ -70,147 +70,37 @@ namespace COTPAB_Szakdolgozat
 
         private void btnProcess_Click(object sender, RoutedEventArgs e)
         {
-            if(pathtxt == "" && (mode == 3 || mode == 4 || mode == 5))
+            btnProcess.IsEnabled = false;
+            lProcessSteps.Visibility = Visibility.Visible;
+
+            bool gpu = false;
+            ManagementObjectSearcher objvide = new ManagementObjectSearcher("select * from Win32_VideoController");
+            foreach (ManagementObject obj in objvide.Get())
             {
-                MessageBox.Show("A kiválasztott feldolgozási módhoz ki kell választanod egy szöveges állományt!");
+                string a = (string)obj["Name"];
+                if (a.Contains("NVIDIA"))
+                {
+                    gpu = true;
+                    break;
+                }
             }
-            else
+
+            int idxofTheSteppedImage = -1;
+            if (tbSteps.Text != String.Empty)
             {
-                btnProcess.IsEnabled = false;
-                lProcessSteps.Visibility = Visibility.Visible;
-
-                //----------------------------------------------------------------------------------------------------------------------
-                bool gpu = false;
-                label.Content = "CPU :(";
-                ManagementObjectSearcher objvide = new ManagementObjectSearcher("select * from Win32_VideoController");
-
-                foreach (ManagementObject obj in objvide.Get())
-                {
-                    string a = (string)obj["Name"];
-                    if (a.Contains("NVIDIA"))
-                    {
-                        label.Content = "GPU";
-                        gpu = true;
-                    }
-                }
-                //----------------------------------------------------------------------------------------------------------------------
-
-                vm.ImageImproving(mode, pathtxt, gpu);
+                idxofTheSteppedImage = Convert.ToInt32(tbSteps.Text);
             }
-        }
 
-        #region SetVisibility
-        private void SetVisibility(int newMode)
-        {
-            if (mode != newMode)
-            {
-                if (mode == 3)
-                {
-                    Labelmode3.Visibility = Visibility.Hidden;
-                    btnmode3.Visibility = Visibility.Hidden;
-                }
-                else if (mode == 4)
-                {
-                    Labelmode4.Visibility = Visibility.Hidden;
-                    btnmode4.Visibility = Visibility.Hidden;
-                }
-                else if (mode == 5)
-                {
-                    Labelmode5.Visibility = Visibility.Hidden;
-                    btnmode5.Visibility = Visibility.Hidden;
-                }
-                //----------------------
+            if (mode1.IsChecked == true)
+                mode = 0;
+            else if(mode2.IsChecked == true)
+                mode = 1;
+            else if (mode3.IsChecked == true)
+                mode = 2;
+            else if (mode4.IsChecked == true)
+                mode = 3;
 
-                if (newMode == 3)
-                {
-                    Labelmode3.Visibility = Visibility.Visible;
-                    btnmode3.Visibility = Visibility.Visible;
-                }
-                else if (newMode == 4)
-                {
-                    Labelmode4.Visibility = Visibility.Visible;
-                    btnmode4.Visibility = Visibility.Visible;
-                }
-                else if (newMode == 5)
-                {
-                    Labelmode5.Visibility = Visibility.Visible;
-                    btnmode5.Visibility = Visibility.Visible;
-                }
-                mode = newMode;
-            }
-        }
-
-        private void mode1_Checked(object sender, RoutedEventArgs e)
-        {
-            SetVisibility(1);
-        }
-
-        private void mode2_Checked(object sender, RoutedEventArgs e)
-        {
-            SetVisibility(2);
-        }
-
-        private void mode3_Checked(object sender, RoutedEventArgs e)
-        {
-            SetVisibility(3);
-        }
-
-        private void mode4_Checked(object sender, RoutedEventArgs e)
-        {
-            SetVisibility(4);
-        }
-
-        private void mode5_Checked(object sender, RoutedEventArgs e)
-        {
-            SetVisibility(5);
-        }
-        #endregion
-
-        private void btnmode3_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog fdlg = new OpenFileDialog();
-            fdlg.Title = "A magyar szöveget tartalmazó fájl kiválasztása";
-            fdlg.InitialDirectory = "";
-            fdlg.Filter = "Txt|*.txt";
-            fdlg.ShowDialog();
-
-            if (fdlg.FileName != "")
-            {
-                pathtxt = fdlg.FileName;
-            }
-        }
-
-        private void btnmode4_Click(object sender, RoutedEventArgs e)
-        {
-            CommonOpenFileDialog dialog = new CommonOpenFileDialog();
-            dialog.InitialDirectory = "";
-
-            dialog.Title = "Az angol szöveg mappájának kiválasztása";
-            dialog.IsFolderPicker = true;
-            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                pathtxt = dialog.FileName;
-            }
-        }
-
-        private void btnmode5_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog fdlg = new OpenFileDialog();
-            fdlg.Title = "A magyar szöveget tartalmazó fájl kiválasztása";
-            fdlg.InitialDirectory = "";
-            fdlg.Filter = "Txt|*.txt";
-            fdlg.ShowDialog();
-
-            if(fdlg.FileName != "")
-            {
-                pathtxt = fdlg.FileName;
-            }
-        }
-
-        private void btnSteps_Click(object sender, RoutedEventArgs e)
-        {
-            ImprovingStepsWindow isw = new ImprovingStepsWindow();
-            isw.ShowDialog();
+            vm.ImageImproving(mode, idxofTheSteppedImage, gpu);
         }
 
         private void Pages_PreviewTextInput(object sender, TextCompositionEventArgs e)

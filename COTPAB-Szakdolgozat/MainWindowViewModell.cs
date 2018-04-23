@@ -33,9 +33,9 @@ namespace COTPAB_Szakdolgozat
         }
 
 
-        public void ImageImproving(int mode, string pathtxt, bool gpu)
+        public void ImageImproving(int mode, int idxofTheSteppedImage, bool gpu)
         {
-            ImageImproving ii = new ImageImproving(mode, PathOriginal, PathNew, pathtxt, this, gpu);
+            ImageImproving ii = new ImageImproving(mode, PathOriginal, PathNew, idxofTheSteppedImage, this, gpu);
             ii.Improve();
         }
 

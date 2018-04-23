@@ -14,14 +14,12 @@ void Slic::clear_data() {
 }
 
 void Slic::init_data(Mat image) {
-	rows = image.rows;
-	cols = image.cols;
-
 	/* Initialize the cluster and distance matrices. */
-	for (int i = 0; i < cols; i++) {
+	printf("ini");
+	for (int i = 0; i < image.cols; i++) {
 		vector<int> cr;
 		vector<double> dr;
-		for (int j = 0; j < rows; j++) {
+		for (int j = 0; j < image.rows; j++) {
 			cr.push_back(-1);
 			dr.push_back(FLT_MAX);
 		}
@@ -32,8 +30,8 @@ void Slic::init_data(Mat image) {
 	centersColPieces = 0;
 	centersRowPieces = 0;
 	/* Initialize the centers and counters. */
-	for (int i = step; i < cols - step / 2; i += step) {
-		for (int j = step; j < rows - step / 2; j += step) {
+	for (int i = step; i < image.cols - step / 2; i += step) {
+		for (int j = step; j < image.rows - step / 2; j += step) {
 			vector<double> center;
 			/* Find the local minimum (gradient-wise). */
 			Vec3b colour = image.at<Vec3b>(j, i);
@@ -80,6 +78,7 @@ void Slic::generate_superpixels(Mat image, int step, int nc) {
 	clear_data();
 
 	init_data(image);
+	printf("\ngene");
 
 	/* Run EM for 10 iterations (as prescribed by the algorithm). */
 	for (int i = 0; i < NR_ITERATIONS; i++) {
@@ -162,7 +161,7 @@ float Slic::colorDistance(Vec3b actuallPixel, Vec3b neighborPixel)
 	return dc;
 }
 
-void Slic::neighborMerge()
+void Slic::neighborMerge(Mat image)
 {
 	const int dx8[numberOfNeighbors] = { -1, -1,  0,  1, 1, 1, 0, -1 };
 	const int dy8[numberOfNeighbors] = { 0, -1, -1, -1, 0, 1, 1,  1 };
@@ -238,9 +237,9 @@ void Slic::neighborMerge()
 		}
 	}
 
-	for (int i = 0; i < cols; i++)
+	for (int i = 0; i < image.cols; i++)
 	{
-		for (int j = 0; j < rows; j++)
+		for (int j = 0; j < image.rows; j++)
 		{
 			if (changes[clusters[i][j]][1] != -1)
 			{

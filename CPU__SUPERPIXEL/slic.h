@@ -13,6 +13,7 @@ using namespace cv;
 #define NR_ITERATIONS 10
 #define numberOfNeighbors 8
 #define maxColorDistance 39
+#define numberofSuperpixels 4500
 
 class Slic {
 private:
@@ -25,8 +26,6 @@ private:
 	int step;
 	int nc;
 	int ns;
-	int rows;
-	int cols;
 	int centersRowPieces;
 	int centersColPieces;
 
@@ -40,6 +39,6 @@ public:
 	void generate_superpixels(Mat image, int step, int nc);
 	void colour_with_cluster_means(Mat image);
 	float colorDistance(Vec3b actuallPixel, Vec3b neighborPixel);
-	void neighborMerge();
+	void neighborMerge(Mat image);
 };
 #endif
