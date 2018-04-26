@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace COTPAB_Szakdolgozat
 {
+    /// <summary>
+    /// Az adatkötést elősegítő osztály
+    /// </summary>
     class Bindable : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;

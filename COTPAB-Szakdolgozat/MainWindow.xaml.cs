@@ -1,22 +1,8 @@
-﻿using Microsoft.Win32;
-using Microsoft.WindowsAPICodePack.Dialogs;
+﻿using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Management;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace COTPAB_Szakdolgozat
 {
@@ -27,7 +13,6 @@ namespace COTPAB_Szakdolgozat
     {
         MainWindowViewModell vm;
         int mode;
-        string pathtxt = "";
 
         public MainWindow()
         {
@@ -37,6 +22,12 @@ namespace COTPAB_Szakdolgozat
             this.DataContext = vm;
         }
 
+        /// <summary>
+        /// A feldolgozandó képregények útvonalának megadása történik itt.
+        /// + default mentési hely beállítása
+        /// </summary>
+        /// <param name="sender">-</param>
+        /// <param name="e">-</param>
         private void btnOriginal_Click(object sender, RoutedEventArgs e)
         {
             CommonOpenFileDialog dialog = new CommonOpenFileDialog();
@@ -52,6 +43,11 @@ namespace COTPAB_Szakdolgozat
             }
         }
 
+        /// <summary>
+        /// A feldolgozott kérpegények mentési helyénk megadása történik itt.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btnNew_Click(object sender, RoutedEventArgs e)
         {
             CommonOpenFileDialog dialog = new CommonOpenFileDialog();
@@ -68,22 +64,16 @@ namespace COTPAB_Szakdolgozat
             }
         }
 
+        /// <summary>
+        /// Itt indul el a feldolgozás, a láthatósági értékek beállítása után kigyűjtöm, hogy el 
+        /// kell-e a feldolgozási lépéseket elmentem, beállítom a kiválasztott mód értékét, majd elindítom a keresést.
+        /// </summary>
+        /// <param name="sender">-</param>
+        /// <param name="e">-</param>
         private void btnProcess_Click(object sender, RoutedEventArgs e)
         {
             btnProcess.IsEnabled = false;
             lProcessSteps.Visibility = Visibility.Visible;
-
-            bool gpu = false;
-            ManagementObjectSearcher objvide = new ManagementObjectSearcher("select * from Win32_VideoController");
-            foreach (ManagementObject obj in objvide.Get())
-            {
-                string a = (string)obj["Name"];
-                if (a.Contains("NVIDIA"))
-                {
-                    gpu = true;
-                    break;
-                }
-            }
 
             int idxofTheSteppedImage = -1;
             if (tbSteps.Text != String.Empty)
@@ -100,21 +90,36 @@ namespace COTPAB_Szakdolgozat
             else if (mode4.IsChecked == true)
                 mode = 3;
 
-            vm.ImageImproving(mode, idxofTheSteppedImage, gpu);
+            vm.ImageImproving(mode, idxofTheSteppedImage);
         }
 
+        /// <summary>
+        /// Ezzel megakadályozom, hogy számtól különböző karaktert is beírhassanak a textboxba.
+        /// </summary>
+        /// <param name="sender">-</param>
+        /// <param name="e">-</param>
         private void Pages_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             Regex regex = new Regex("[^0-9]+");
             e.Handled = regex.IsMatch(e.Text);
         }
 
+        /// <summary>
+        /// Láthgatósgi értékek beállítása
+        /// </summary>
+        /// <param name="sender">-</param>
+        /// <param name="e">-</param>
         private void cbSteps_Checked(object sender, RoutedEventArgs e)
         {
             lSteps.Visibility = Visibility.Visible;
             tbSteps.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// Láthgatósgi értékek beállítása
+        /// </summary>
+        /// <param name="sender">-</param>
+        /// <param name="e">-</param>
         private void cbSteps_Unchecked(object sender, RoutedEventArgs e)
         {
             lSteps.Visibility = Visibility.Hidden;
