@@ -5,11 +5,10 @@ __device__ float *d_distances;							//cols * rows
 __device__ float *d_centers;							//centersLength * 5
 __device__ int *d_center_counts;						//centersLength
 __device__ uchar3 *d_colors;							//cols * rows
-__device__ int *d_neighbors;							//centerlength * 8
 
-slicCUDA::slicCUDA(){}
+slicCUDA::slicCUDA() {}
 
-slicCUDA::~slicCUDA(){}
+slicCUDA::~slicCUDA() {}
 
 __device__ float compute_dist(int ci, int y, int x, uchar3 colour, float *d_centers, int pitch, int d_step)
 {
@@ -22,21 +21,33 @@ __device__ float compute_dist(int ci, int y, int x, uchar3 colour, float *d_cent
 	return sqrt(pow(dc / nc, 2) + pow(ds / d_step, 2));
 }
 
-__global__ void compute(int d_cols, int d_rows, int d_step, int d_centersLength, int *d_clusters, float *d_distances,
-	float *d_centers, int *d_center_counts, uchar3 *d_colors, int pitch)
+//lépésszám: centroidok száma
+//Itt rendelem a pixeleket az egyes clusterekhez szín, valamint euklideszi távolság szerint
+__global__ void orderingPixelsForClustersKernel(int d_cols, int d_rows, int d_step, int d_centersLength,
+	int *d_clusters, float *d_distances, float *d_centers, int *d_center_counts, uchar3 *d_colors, int pitch)
 {
 	int clusterIDX = blockIdx.x * blockDim.x + threadIdx.x;
-
+	//mivel nem tudok pontosan annyi szálat indítani ahány clusterem van, 
+	//ezért megvizsgálom, hogy az adott clusterindex még létezik-e
 	if (clusterIDX < d_centersLength)
 	{
-		for (int pixelY = d_centers[clusterIDX *pitch + 3] - (d_step*1.5); pixelY < d_centers[clusterIDX *pitch + 3] + (d_step*1.5); pixelY++)
+		//Bejárom az adott cluster "step" sugarú környezetét
+		//Az itt található pixelek mindegyikére megnézem, hogy az aktuálisan vizsgált
+		//centroid van-e hozzá a legközelebb, és ha igen, akkor beállítom a megfelelõ adatokat
+		//Ez a két egybeágyazott forciklus miatt hosszúnak tûnik, de alapvetõen ez kevés lépésbõl áll
+		for (int pixelY = d_centers[clusterIDX *pitch + 3] - (d_step*1.5); pixelY <
+			d_centers[clusterIDX *pitch + 3] + (d_step*1.5); pixelY++)
 		{
-			for (int pixelX = d_centers[clusterIDX *pitch + 4] - (d_step*1.5); pixelX < d_centers[clusterIDX *pitch + 4] + (d_step*1.5); pixelX++)
+			for (int pixelX = d_centers[clusterIDX *pitch + 4] - (d_step*1.5); pixelX <
+				d_centers[clusterIDX *pitch + 4] + (d_step*1.5); pixelX++)
 			{
+				//Ellenõrzöm a határokat
 				if (pixelX >= 0 && pixelX < d_rows && pixelY >= 0 && pixelY < d_cols)
 				{
 					uchar3 colour = d_colors[d_rows*pixelY + pixelX];
 					float distance = compute_dist(clusterIDX, pixelX, pixelY, colour, d_centers, pitch, d_step);
+					//ha a távolság kisebb mint az eddig mentett (a default az FLT_MAX) akkor beállítom 
+					//az aktuális centroidot a legközelebbinek
 					if (distance < d_distances[d_rows*pixelY + pixelX])
 					{
 						d_distances[d_rows*pixelY + pixelX] = distance;
@@ -45,6 +56,7 @@ __global__ void compute(int d_cols, int d_rows, int d_step, int d_centersLength,
 				}
 			}
 		}
+
 		//a centroidok alaphelyzetbe állítása
 		d_centers[clusterIDX *pitch + 0] = 0;
 		d_centers[clusterIDX *pitch + 1] = 0;
@@ -56,14 +68,21 @@ __global__ void compute(int d_cols, int d_rows, int d_step, int d_centersLength,
 
 }
 
-__global__ void compute1(int d_cols, int d_rows, int *d_clusters, float *d_distances,
+//lépésszám: pixelek száma
+//Itt összegzem a korábban kapott eredményeket.
+__global__ void clusterValuesSumByPixelsKernel(int d_cols, int d_rows, int *d_clusters, float *d_distances,
 	float *d_centers, int *d_center_counts, uchar3 *d_colors, int pitch)
 {
 	int idIn1D = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idIn1D < d_cols*d_rows)
 	{
+		//Alaphelyzetbe állítom a távolságértékeket minden piyel esetében
 		d_distances[idIn1D] = FLT_MAX;
 
+		//Megkeresem, hogy az adott pixel melyik centroidhoz tartozik.
+		//amint ez megvan, összegzem ezeket az értékeket, atomi mûvelettel, ugyanis
+		//elõfordulhat hogy egy centroidhoz tartozó tömbértéket egyszerre több pixelszál is szeretne írni
+		//majd növelem a centroidhoz tartozó pixelek számát
 		int whichCluster = d_clusters[idIn1D];
 		atomicAdd(&d_centers[whichCluster*pitch + 0], d_colors[idIn1D].x);
 		atomicAdd(&d_centers[whichCluster*pitch + 1], d_colors[idIn1D].y);
@@ -75,7 +94,9 @@ __global__ void compute1(int d_cols, int d_rows, int *d_clusters, float *d_dista
 	}
 }
 
-__global__ void compute2(int d_centersLength, float *d_centers, int *d_center_counts, int pitch)
+//lépésszám: centroidok száma
+//Az összegzett centroidértékeket elosztom a centroidhoz tartozó pixelek darabszámával.
+__global__ void computeCorrectCentroidValuesKernel(int d_centersLength, float *d_centers, int *d_center_counts, int pitch)
 {
 	int idIn1D = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idIn1D < d_centersLength)
@@ -88,6 +109,7 @@ __global__ void compute2(int d_centersLength, float *d_centers, int *d_center_co
 	}
 }
 
+//A szomszédok összevonásakor használt színtávolság számító függvény
 float slicCUDA::colorDistance(uchar3 actuallPixel, uchar3 neighborPixel)
 {
 	float dc = sqrt(pow(actuallPixel.x - neighborPixel.x, 2) + pow(actuallPixel.y - neighborPixel.y, 2)
@@ -95,6 +117,7 @@ float slicCUDA::colorDistance(uchar3 actuallPixel, uchar3 neighborPixel)
 	return dc;
 }
 
+//Itt kerülnek összevonásra a szomszédos hasonló színû szegmensek
 void slicCUDA::neighborMerge()
 {
 	const int dx8[numberOfNeighbors] = { -1, -1,  0,  1, 1, 1, 0, -1 };
@@ -102,6 +125,7 @@ void slicCUDA::neighborMerge()
 
 	for (int i = 0; i < centersLength; i++)
 	{
+		//kimentem az aktuális centroid értékeit
 		uchar3 actuallCluster;
 		actuallCluster.x = centers[i * 5];
 		actuallCluster.y = centers[i * 5 + 1];
@@ -110,25 +134,32 @@ void slicCUDA::neighborMerge()
 		int clusterRow = i / centersRowPieces;
 		int clusterCol = i % centersRowPieces;
 
+		//megnézem az aktuális centroid szomszédjait
 		for (int j = 0; j < numberOfNeighbors; j++)
 		{
+			//ellenõrzöm a határokat
 			if (clusterCol + dy8[j] >= 0 && clusterCol + dy8[j] < centersRowPieces
 				&& clusterRow + dx8[j] >= 0 && clusterRow + dx8[j] < centersColPieces)
 			{
+				//kimentem a szomszédos centroid adatait
 				uchar3 neighborPixel;
 				neighborPixel.x = centers[(centersRowPieces* (clusterRow + dx8[j]) + (clusterCol + dy8[j])) * 5 + 0];
 				neighborPixel.y = centers[(centersRowPieces* (clusterRow + dx8[j]) + (clusterCol + dy8[j])) * 5 + 1];
 				neighborPixel.z = centers[(centersRowPieces* (clusterRow + dx8[j]) + (clusterCol + dy8[j])) * 5 + 2];
 
-				if (centersRowPieces * clusterRow + clusterCol < centersRowPieces * (clusterRow + dx8[j]) + (clusterCol + dy8[j]) &&
-					colorDistance(actuallCluster, neighborPixel) < maxColorDistance)
+				//ha az aktuális centroid sorszáma kisebb mint a szomszéd sorszáma, valamint a színtávolság a megengedett határon
+				//belül van, akkor felveszem az összevonandó szömszédok közé.
+				if (centersRowPieces * clusterRow + clusterCol < centersRowPieces * (clusterRow + dx8[j]) +
+					(clusterCol + dy8[j]) && colorDistance(actuallCluster, neighborPixel) < maxColorDistance)
 				{
-					neighbors[(centersRowPieces * clusterRow + clusterCol) * numberOfNeighbors + j] = centersRowPieces * (clusterRow + dx8[j]) + (clusterCol + dy8[j]);
+					neighbors[(centersRowPieces * clusterRow + clusterCol) * numberOfNeighbors + j] =
+						centersRowPieces * (clusterRow + dx8[j]) + (clusterCol + dy8[j]);
 				}
 			}
 		}
 	}
 
+	//inicializálok egy segédtömböt, amelyben el fogom tárolni hogy az egyes centroidokat melyik másik centroiddal kell összevonni
 	int2 *changes = new int2[centersLength];
 	for (int i = 0; i < centersLength; i++)
 	{
@@ -136,15 +167,25 @@ void slicCUDA::neighborMerge()
 		changes[i].y = -1;
 	}
 
+	//Az itt következõ kódrésznek az a lényege, hogy az összevonandó centroidokat összeláncolom úgy, hogy az egymáshoz közel lévõ
+	//megengedett színtávolságú centroidok össze legyenek vonva, annak elkerülése végett, hogy esetleg egy centroid egy olyan másik
+	//centroiddal legyen összevonva, amelyet már összevontam egy másikkal.
+	//Például: a kép szélén található egy fehér keret, amelyen 500 centroid helyezkedik el. Ezeket párossával is összevonhatnám, de
+	//ehelyett mind az 500-at egy centroiddá alakítom, és egyben kezelem az egészet.
 	for (int i = 0; i < centersLength; i++)
 	{
 		for (int j = 0; j < numberOfNeighbors; j++)
 		{
+			//kimentem, hogy az adott szomszéd az melyik centroid
 			int cluster = neighbors[i * numberOfNeighbors + j];
 			if (cluster != -1)
 			{
+				//kimentem, hogy az adott centroidot melyik másikkal kell összevonni
 				int neighborIDX = changes[cluster].y;
 				int clusterIDX = i;
+				//Addig megyek végig az összevonandókon amíg el nem érek egy oylan centroidig, amit már nem kell másikkal összevonni
+				//(Garantáltan van olyan centroid a lánc végén amelyet nem kell másikkal összevonni, annak köszönhetõen, hogy 
+				//csak akkor mentem el szomszédként az adott centroidot ha annak sorszáma nagyobb mint az aktuálisan vizsgált)
 				while (neighborIDX != -1)
 				{
 					neighborIDX = changes[neighborIDX].y;
@@ -159,6 +200,7 @@ void slicCUDA::neighborMerge()
 		}
 	}
 
+	//Végül kimentem minden pixel esetében, hogy melyik az új centroid amhez mostantól tartoznak.
 	for (int i = 0; i < cols*rows; i++)
 	{
 		if (changes[clusters[i]].y != -1)
@@ -174,6 +216,7 @@ void slicCUDA::initData(Mat image)
 	rows = image.rows;
 	step = (sqrt((cols * rows) / (double)numberofSuperpixels));
 
+	//feltöltés default adatokkal
 	clusters = new int[cols*rows];
 	distances = new float[cols*rows];
 	for (int i = 0; i < cols*rows; i++)
@@ -182,10 +225,10 @@ void slicCUDA::initData(Mat image)
 		distances[i] = FLT_MAX;
 	}
 
-	//Ez azért kell mert elõre nem tudom, hogy hány eleme lesz a centers-nek, ezért elõször egy vectorhoz adogatom hozzá az elemeket
-	// majd késõbb létrehozom a tömböt annyi elemmel, ahány eleme van a segédvectornak, majd átmásolom az adatokat.
 	centersColPieces = 0;
 	centersRowPieces = 0;
+	//Ez azért kell mert elõre nem tudom, hogy hány eleme lesz a centers-nek, ezért elõször egy vectorhoz adogatom hozzá az elemeket
+	// majd késõbb létrehozom a tömböt annyi elemmel, ahány eleme van a segédvectornak, majd átmásolom az adatokat.
 	vector<vector<float> > h_centers;
 	for (int i = step; i < cols - step / 2; i += step) {
 		for (int j = step; j < rows - step / 2; j += step) {
@@ -209,7 +252,9 @@ void slicCUDA::initData(Mat image)
 	centers = new float[centersLength * 5];
 	center_counts = new int[centersLength];
 	neighbors = new int[centersLength * numberOfNeighbors];
-
+	//A centers úgy tárolja az adatokat, hogy egy pixelhez letárolja annak x, és y pozícióját a képen, valamint
+	//az adott pixel R, G és B színkomponenseit
+	//A szomszédtömb esetében pedig feltöltöm a 8 szomszédot jelzõ értéket default adattal.
 	int idx = 0;
 	for (int i = 0; i < centersLength; i++)
 	{
@@ -238,7 +283,7 @@ void slicCUDA::initData(Mat image)
 }
 
 
-
+//A kerneleken használandó tömbök memóriafoglalása, majd átmásolása
 void slicCUDA::dataCopy()
 {
 	cudaMalloc((void**)&d_clusters, sizeof(int)*rows*cols);
@@ -253,6 +298,7 @@ void slicCUDA::dataCopy()
 	cudaMemcpy(d_colors, colors, sizeof(uchar3)*rows*cols, cudaMemcpyHostToDevice);
 }
 
+//A device tömbök felszabadítása
 void slicCUDA::dataFree()
 {
 	cudaFree(d_clusters);
@@ -262,11 +308,22 @@ void slicCUDA::dataFree()
 	cudaFree(d_colors);
 }
 
-void slicCUDA::colour_with_cluster_means(Mat image) {
-	cout << "FILL" << endl;
+//A szükséges adatok visszamásolása kernelrõl, majd a tömbök felszabadítása
+void slicCUDA::copyBackAndFree()
+{
+	cudaMemcpy(distances, d_distances, sizeof(float)*rows*cols, cudaMemcpyDeviceToHost);
+	cudaMemcpy(clusters, d_clusters, sizeof(int)*rows*cols, cudaMemcpyDeviceToHost);
+	cudaMemcpy(centers, d_centers, sizeof(int)*centersLength * 5, cudaMemcpyDeviceToHost);
+	cudaMemcpy(center_counts, d_center_counts, sizeof(int)*centersLength, cudaMemcpyDeviceToHost);
+	dataFree();
+}
 
+//A feldolgozás befejeztével az eredményeket feldolgozva létrehozok egy új képet az eredmények alapján
+void slicCUDA::colour_with_cluster_means(Mat image) {
 	for (int i = 0; i < image.cols; i++) {
 		for (int j = 0; j < image.rows; j++) {
+			//Korábban már meghatároztam ,hogy az adott piyxelhez milyen szín tartozik, 
+			//így csak beállítom, hogy az új képen is ez legyen a színe.
 			int idx = clusters[i*image.rows + j];
 			Vec3b ncolour = image.at<Vec3b>(j, i);
 
@@ -279,25 +336,25 @@ void slicCUDA::colour_with_cluster_means(Mat image) {
 	}
 }
 
+//Elõször kiszámolom, hogy hány blokkra lesz szükségem, majd elindítom a megfelelõ kerneleket
 void slicCUDA::startKernels()
 {
-	int howManyBlocks = centersLength / maxThreadinoneBlock;
-	int threadsPerBlock = (centersLength / howManyBlocks) + 1;
+	int howManyBlocksInClusterProcess = centersLength / maxThreadinoneBlock;
+	int threadsPerBlockInClusterProcess = (centersLength / howManyBlocksInClusterProcess) + 1;
 
-	int howManyBlocks2 = rows*cols / maxThreadinoneBlock;
-	int threadsPerBlock2 = (rows*cols / howManyBlocks2) + 1;
-	for (int i = 0; i < iteration; i++)
+	int howManyBlocksInPixelProcess = rows*cols / maxThreadinoneBlock;
+	int threadsPerBlockInPixelProcess = (rows*cols / howManyBlocksInPixelProcess) + 1;
+
+	for (int i = 0; i < iterations; i++)
 	{
 		dataCopy();
-		compute << <howManyBlocks, threadsPerBlock >> > (cols, rows, step, centersLength, d_clusters, d_distances, d_centers, d_center_counts, d_colors, 5);
-		compute1 << <howManyBlocks2, threadsPerBlock2 >> > (cols, rows, d_clusters, d_distances, d_centers, d_center_counts, d_colors, 5);
-		compute2 << <howManyBlocks, threadsPerBlock >> > (centersLength, d_centers, d_center_counts, 5);
+		orderingPixelsForClustersKernel << <howManyBlocksInClusterProcess, threadsPerBlockInClusterProcess >> >
+			(cols, rows, step, centersLength, d_clusters, d_distances, d_centers, d_center_counts, d_colors, 5);
+		clusterValuesSumByPixelsKernel << <howManyBlocksInPixelProcess, threadsPerBlockInPixelProcess >> >
+			(cols, rows, d_clusters, d_distances, d_centers, d_center_counts, d_colors, 5);
+		computeCorrectCentroidValuesKernel << <howManyBlocksInClusterProcess, threadsPerBlockInClusterProcess >> >
+			(centersLength, d_centers, d_center_counts, 5);
 
-		cudaMemcpy(distances, d_distances, sizeof(float)*rows*cols, cudaMemcpyDeviceToHost);
-		cudaMemcpy(clusters, d_clusters, sizeof(int)*rows*cols, cudaMemcpyDeviceToHost);
-		cudaMemcpy(centers, d_centers, sizeof(int)*centersLength * 5, cudaMemcpyDeviceToHost);
-		cudaMemcpy(center_counts, d_center_counts, sizeof(int)*centersLength, cudaMemcpyDeviceToHost);
-
-		dataFree();
+		copyBackAndFree();
 	}
 }

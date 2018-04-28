@@ -120,10 +120,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="slic.cpp" />
+    <ClCompile Include="slicCPU.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="slic.h" />
+    <ClInclude Include="slicCPU.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

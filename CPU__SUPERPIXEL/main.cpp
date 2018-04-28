@@ -1,10 +1,12 @@
-#include "slic.h"
+#include "slicCPU.h"
 
 int main(int ArgsC, char* Args[])
 {
+	//Tesztelés céljából beállítok egy default képnevet
 	string readPath = "completed.jpg";
 	string writePath = "xmen.jpg";
 
+	//ha van kapott argumentum akkor azokat használom
 	if (ArgsC > 1)
 	{
 		readPath = Args[1];
@@ -12,13 +14,9 @@ int main(int ArgsC, char* Args[])
 	}
 
 	Mat image = imread(readPath, 1);
-
-	int step = (sqrt((image.cols * image.rows) / (double)numberofSuperpixels));
-
-	Slic slic;
-	slic.generate_superpixels(image, step, 80);
-
-	slic.neighborMerge(image);
-	slic.colour_with_cluster_means(image);
+	slicCPU slicCPU;
+	slicCPU.generate_superpixels(image);
+	slicCPU.neighborMerge(image);
+	slicCPU.colour_with_cluster_means(image);
 	imwrite(writePath, image);
 }

@@ -120,13 +120,13 @@ namespace COTPAB_Szakdolgozat
         {
             semaphore.Wait();
 
-            Process TestProcess = new Process();
-            TestProcess.StartInfo.FileName = exeName;
-            TestProcess.StartInfo.UseShellExecute = false;
-            TestProcess.StartInfo.CreateNoWindow = true;
-            TestProcess.StartInfo.Arguments = arguments;
-            TestProcess.Start();
-            TestProcess.WaitForExit();
+            Process process = new Process();
+            process.StartInfo.FileName = exeName;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.Arguments = arguments;
+            process.Start();
+            process.WaitForExit();
 
             lock (processLockObj)
             {
@@ -143,7 +143,7 @@ namespace COTPAB_Szakdolgozat
         /// </summary>
         private void processMode0()
         {
-            IniProcessSteps(1);
+            InitProcessSteps(1);
             semaphore = new SemaphoreSlim(Environment.ProcessorCount);
             Task[] tasks = new Task[howManyImages];
             for (int i = 0; i < howManyImages; i++)
@@ -165,7 +165,7 @@ namespace COTPAB_Szakdolgozat
         /// </summary>
         private void processMode1()
         {
-            IniProcessSteps(2);
+            InitProcessSteps(2);
             Directory.CreateDirectory(pathNew + "\\Temp");
             semaphore = new SemaphoreSlim(Environment.ProcessorCount);
             Task[] tasks = new Task[howManyImages];
@@ -196,7 +196,7 @@ namespace COTPAB_Szakdolgozat
         /// </summary>
         private void processMode2()
         {
-            IniProcessSteps(2);
+            InitProcessSteps(2);
             Task[] tasks = new Task[howManyImages];
 
             string exeName = String.Empty;
@@ -228,7 +228,7 @@ namespace COTPAB_Szakdolgozat
         /// </summary>
         private void processMode3()
         {
-            IniProcessSteps(3);
+            InitProcessSteps(3);
             Directory.CreateDirectory(pathNew + "\\Temp");
             Task[] tasks = new Task[howManyImages];
             string exeName = String.Empty;
@@ -279,7 +279,7 @@ namespace COTPAB_Szakdolgozat
         /// inicializálom a feldolgozás állapotát jelzó részt.
         /// </summary>
         /// <param name="howmanyRound"></param>
-        private void IniProcessSteps(int howmanyRound)
+        private void InitProcessSteps(int howmanyRound)
         {
             maxProcessSteps = howManyImages * howmanyRound;
             vm.ProcessSteps = "A képek feldolgozása folyamatban. A feldolgozás állapota: " + maxProcessSteps +
