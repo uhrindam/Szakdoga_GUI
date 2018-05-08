@@ -6,6 +6,7 @@
 #include <math.h>
 #include <vector>
 #include <float.h>
+#include <random>
 using namespace std;
 using namespace cv;
 
@@ -73,4 +74,6 @@ public:
 	void initData(Mat image);
 	void colour_with_cluster_means(Mat image);
 	void startKernels();
+	void testSuperpixel(Mat image);
+	void testDataToConsole();
 };

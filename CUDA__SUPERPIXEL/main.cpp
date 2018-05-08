@@ -18,6 +18,8 @@ int main(int ArgsC, char* Args[])
 	slicGPU.initData(image);
 	slicGPU.startKernels();
 	slicGPU.neighborMerge();
+	//slicGPU.testSuperpixel(image);
+	//slicGPU.testDataToConsole();
 	slicGPU.colour_with_cluster_means(image);
 	imwrite(writePath, image);
 }

@@ -280,7 +280,7 @@ void slicCPU::colour_with_cluster_means(Mat image)
 			//Korábban már meghatároztam ,hogy az adott piyxelhez milyen szín tartozik, 
 			//így csak beállítom, hogy az új képen is ez legyen a színe.
 			int idx = clusters[i][j];
-			Vec3b ncolour = image.at<Vec3b>(j, i);
+			Vec3b ncolour;
 
 			ncolour.val[0] = centers[idx][0];
 			ncolour.val[1] = centers[idx][1];

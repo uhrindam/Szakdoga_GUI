@@ -325,7 +325,7 @@ void slicCUDA::colour_with_cluster_means(Mat image) {
 			//Korábban már meghatároztam ,hogy az adott piyxelhez milyen szín tartozik, 
 			//így csak beállítom, hogy az új képen is ez legyen a színe.
 			int idx = clusters[i*image.rows + j];
-			Vec3b ncolour = image.at<Vec3b>(j, i);
+			Vec3b ncolour;
 
 			ncolour.val[0] = centers[idx * 5 + 0];
 			ncolour.val[1] = centers[idx * 5 + 1];
@@ -357,4 +357,65 @@ void slicCUDA::startKernels()
 
 		copyBackAndFree();
 	}
+}
+
+//Itt kerül tesztelésre az, hogy a superpixelek jól szegmentálták-e ki a képet.
+//Ehhez az egyes szegmenseket nem az átlagszínnel töltöm fel, hanem random színekkel,
+//annak érdekében, hogy ezáltal a szomszédos szegmensek jól elkülönülnek majd egymástól.
+void slicCUDA::testSuperpixel(Mat image)
+{
+	for (int i = 0; i < centersLength; i++)
+	{
+		centers[i * 5 + 0] = rand() % 255 + 0;
+		centers[i * 5 + 1] = rand() % 255 + 0;
+		centers[i * 5 + 2] = rand() % 255 + 0;
+	}
+
+	for (int i = 0; i < image.cols; i++) {
+		for (int j = 0; j < image.rows; j++) {
+			int idx = clusters[i*image.rows + j];
+			Vec3b ncolour;
+
+			ncolour.val[0] = centers[idx * 5 + 0];
+			ncolour.val[1] = centers[idx * 5 + 1];
+			ncolour.val[2] = centers[idx * 5 + 2];
+
+			image.at<Vec3b>(j, i) = ncolour;
+		}
+	}
+	imwrite("testWithRandomColour.jpg", image);
+}
+
+//Itt kerülnek kiíratásra a tesztelés során szükséges adatok a consolera
+void slicCUDA::testDataToConsole()
+{
+	int howManyBlocksInClusterProcess = centersLength / maxThreadinoneBlock;
+	int threadsPerBlockInClusterProcess = (centersLength / howManyBlocksInClusterProcess) + 1;
+
+	int howManyBlocksInPixelProcess = rows*cols / maxThreadinoneBlock;
+	int threadsPerBlockInPixelProcess = (rows*cols / howManyBlocksInPixelProcess) + 1;
+
+	int notInCentroid = 0;
+	for (int i = 0; i < rows*cols; i++)
+	{
+		if (clusters[i] == -1)
+		{
+			notInCentroid++;
+		}
+	}
+	int inCentroid = rows*cols - notInCentroid;
+
+	printf("%i a kep sorainak a szama\n", rows);
+	printf("%i a kep oszlopainak a szama\n", cols);
+	printf("%i darab pixelbol all összesen a kep\n", rows*cols);
+	printf("%i tavolsagra kerultek elhelyezesre egymastol a centroidok\n\n", step);
+
+	printf("%i darab centroidra van szukseg a feldoglozassoran\n", centersLength);
+	printf("%i darab elinditott szal a clentroidok mopzgatasahoz.\n\n", threadsPerBlockInClusterProcess*howManyBlocksInClusterProcess);
+
+	printf("%i darab elinditott szal a pixelek feldolgozasahoz.\n", howManyBlocksInPixelProcess*threadsPerBlockInPixelProcess);
+	printf("%i darab pixel centroidhoz van renderve\n", inCentroid);
+	printf("%i darab pixel nincs centroidhoz renderve\n", notInCentroid);
+
+	getchar();
 }
